@@ -1,0 +1,36 @@
+{
+	"name": "gzh-writing-pipeline",
+	"version": "0.2.0",
+	"description": "Obsidian plugin: 公众号写作流水线助手",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc --noEmit && node esbuild.config.mjs production",
+		"visual-diff": "node scripts/visual-diff-png.mjs",
+		"sync-moka": "node scripts/sync-moka-templates.mjs",
+		"raphael-sample": "node scripts/raphael-format-sample.mjs"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"highlight.js": "^11.11.1",
+		"html-to-image": "^1.11.11",
+		"markdown-it": "^14.1.1",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	},
+	"devDependencies": {
+		"@types/markdown-it": "^14.1.2",
+		"@types/node": "^20.14.11",
+		"@types/pngjs": "^6.0.5",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"esbuild": "0.20.2",
+		"jsdom": "^29.1.1",
+		"obsidian": "latest",
+		"pixelmatch": "^5.3.0",
+		"pngjs": "^7.0.0",
+		"typescript": "^5.4.5"
+	}
+}

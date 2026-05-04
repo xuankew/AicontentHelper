@@ -1,0 +1,9 @@
+{
+	"id": "gzh-writing-pipeline",
+	"name": "公众号写作流水线助手",
+	"version": "0.2.0",
+	"minAppVersion": "1.7.2",
+	"description": "在 Obsidian（桌面端）中固定公众号写作流水线：提纲→扩写→去 AI 味→审稿；集成 Baoyu 技能：发布公众号草稿与图文卡片配图。",
+	"author": "",
+	"isDesktopOnly": true
+}

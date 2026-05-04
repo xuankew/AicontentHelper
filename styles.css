@@ -1,0 +1,9 @@
+/* 轻量样式：不改变 Obsidian 主体风格 */
+.gzh-textarea {
+	font-family: var(--font-monospace-theme);
+	width: 100%;
+}
+
+.view-header .gzh-wp-toolbar-btn {
+	margin-inline-start: 2px;
+}
