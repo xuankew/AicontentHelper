@@ -9,6 +9,7 @@ export type ToolbarActions = {
 	review: () => void | Promise<void>;
 	publishWechat: () => void | Promise<void>;
 	imageCards: () => void | Promise<void>;
+	video: () => void | Promise<void>;
 };
 
 /**
@@ -86,6 +87,12 @@ function installOnMarkdownView(
 			icon: "layout-grid",
 			title:
 				"Moka 图文：小红书画风或公众号画风由设置的默认平台决定，分页导出 PNG（与侧边「发稿到微信公众平台」无关）",
+		},
+		{
+			step: "video",
+			icon: "video",
+			title:
+				"视频 · 将小红书图文 + 04-final.md 合成 30 秒竖屏短视频（ListenHub 配音 + FFmpeg）",
 		},
 	];
 

@@ -124,6 +124,25 @@ export interface GzhWritingPipelineSettings {
 	mokaCardExportPixelRatio: MokaCardExportPixelRatio;
 	/** 目标卡组页数 clamp（拆分提示会约束 4–10，默认约 6） */
 	mokaCardSlideCount: number;
+
+	/**
+	 * 「视频」按钮：先把 04-final.md 改写成 30 秒口播稿，再调用 `scripts/render_video.py` 合成
+	 * 1080×1920 竖屏 mp4。该流程依赖本机 Python 3、ffmpeg，以及可选的 ListenHub TTS。
+	 */
+	videoScriptPrompt: string;
+	videoPythonPath: string;
+	videoFfmpegPath: string;
+	videoTtsEngine: "listenhub" | "edge";
+	listenhubApiKey: string;
+	listenhubBaseUrl: string;
+	listenhubVoice: string;
+	listenhubModel: string;
+	/** 留空则使用插件目录下 resource/mp3/65歌曲.mp3。 */
+	videoBackgroundMusicPath: string;
+	/** 0.04–0.45 之间，render_video.py 内部会再 clamp。 */
+	videoBackgroundMusicVolume: number;
+	videoOpenSec: number;
+	videoEndSec: number;
 }
 
 /** Moka 风格 JSON：`cover` / `content` / `end` 三联结构 */
@@ -169,13 +188,6 @@ export interface ArticlePublishMeta {
 		raw?: Record<string, unknown>;
 		error?: string;
 	};
-	/** Legacy：旧版 API 制图 image-cards */
-	imageCardsLegacy?: {
-		lastRunAt?: string;
-		outlineVaultPath?: string;
-		count?: number;
-		error?: string;
-	};
 	/** Native Moka DOM 卡组 */
 	mokaCards?: {
 		lastRunAt?: string;
@@ -191,6 +203,16 @@ export interface ArticlePublishMeta {
 	coverPromptVaultPath?: string;
 	coverGeneratedAt?: string;
 	illustrationsGeneratedAt?: string;
+	/** 「视频」按钮最近一次产物 */
+	video?: {
+		lastRunAt?: string;
+		scriptVaultPath?: string;
+		configVaultPath?: string;
+		outputVaultPath?: string;
+		voiceSec?: number;
+		ttsEngine?: string;
+		error?: string;
+	};
 }
 
 export interface ArticleMeta {

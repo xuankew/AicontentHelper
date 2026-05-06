@@ -1,4 +1,6 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { spawn } from "child_process";
+import * as nodePath from "path";
 import type {
 	GzhWritingPipelineSettings,
 	ImagePresetProvider,
@@ -812,6 +814,228 @@ export class GZHSettingTab extends PluginSettingTab {
 				);
 		});
 
+		addFold(containerEl, "短视频 · ListenHub / FFmpeg", false, (vEl) => {
+			const s = this.pipelinePlugin.settings;
+			const save = () => this.pipelinePlugin.saveSettings();
+
+			vEl.createEl("small", {
+				text: "「视频」按钮：先把 04-final.md 改写成 30 秒口播稿，再用 scripts/render_video.py 把小红书 Moka 卡片合成 1080×1920 mp4。需要本机有 Python 3 与 FFmpeg；ListenHub 用于 TTS 配音。",
+			});
+			vEl.createDiv();
+
+			new Setting(vEl)
+				.setName("Python 可执行文件")
+				.setDesc("默认 python3。如有专用 venv，填写绝对路径。须能 import edge_tts/Pillow（按渲染脚本要求）。")
+				.addText((t) =>
+					t
+						.setPlaceholder("python3")
+						.setValue(s.videoPythonPath)
+						.onChange(async (v) => {
+							s.videoPythonPath = v.trim() || "python3";
+							await save();
+						}),
+				);
+
+			const envStatusEl = vEl.createEl("pre", {
+				text: "环境状态：尚未检测",
+			});
+			envStatusEl.style.whiteSpace = "pre-wrap";
+			envStatusEl.style.userSelect = "text";
+			envStatusEl.style.maxHeight = "220px";
+			envStatusEl.style.overflow = "auto";
+			envStatusEl.style.padding = "8px 10px";
+			envStatusEl.style.border = "1px solid var(--background-modifier-border)";
+			envStatusEl.style.borderRadius = "8px";
+
+			new Setting(vEl)
+				.setName("Python 环境工具")
+				.setDesc("一键检测 Python/FFmpeg/依赖，或在插件目录创建 venv 并安装短视频依赖。")
+				.addButton((btn) =>
+					btn.setButtonText("检测环境").onClick(async () => {
+						btn.setDisabled(true);
+						envStatusEl.textContent = "正在检测环境，请稍候…";
+						try {
+							const report = await this.detectVideoPythonEnv();
+							envStatusEl.textContent = report;
+							new Notice("短视频环境检测完成。", 3000);
+						} catch (e) {
+							const msg = e instanceof Error ? e.message : String(e);
+							envStatusEl.textContent = `检测失败：${msg}`;
+							new Notice(`环境检测失败：${msg}`, 8000);
+						} finally {
+							btn.setDisabled(false);
+						}
+					}),
+				)
+				.addButton((btn) =>
+					btn.setButtonText("一键安装/修复").setCta().onClick(async () => {
+						btn.setDisabled(true);
+						envStatusEl.textContent =
+							"正在创建/修复 Python 环境（约 1-3 分钟，依赖网络）…";
+						try {
+							const report = await this.installVideoPythonEnv();
+							envStatusEl.textContent = report;
+							new Notice(
+								"短视频 Python 环境已完成安装/修复。",
+								5000,
+							);
+							this.display();
+						} catch (e) {
+							const msg = e instanceof Error ? e.message : String(e);
+							envStatusEl.textContent = `安装失败：${msg}`;
+							new Notice(`安装失败：${msg}`, 10000);
+						} finally {
+							btn.setDisabled(false);
+						}
+					}),
+				);
+
+			new Setting(vEl)
+				.setName("FFmpeg 路径或目录（可选）")
+				.setDesc("Obsidian 桌面端 GUI 通常拿不到 brew 的 PATH，建议填写 /opt/homebrew/bin 或完整 ffmpeg 路径。")
+				.addText((t) =>
+					t
+						.setPlaceholder("/opt/homebrew/bin")
+						.setValue(s.videoFfmpegPath)
+						.onChange(async (v) => {
+							s.videoFfmpegPath = v.trim();
+							await save();
+						}),
+				);
+
+			addStrEnumDropdown(
+				vEl,
+				"TTS 引擎",
+				"默认使用 ListenHub（需 API Key）。Edge 走 edge-tts，需 Python 端安装 edge_tts。",
+				["listenhub", "edge"] as const,
+				s.videoTtsEngine,
+				(v) => (v === "listenhub" ? "ListenHub（推荐）" : "Edge TTS（免费）"),
+				(v) => {
+					s.videoTtsEngine = v;
+				},
+				async () => save(),
+			);
+
+			new Setting(vEl)
+				.setName("ListenHub · API Key")
+				.setDesc("listenhub.ai → OpenAPI；引擎选 ListenHub 时必填。")
+				.addText((t) => {
+					t.inputEl.type = "password";
+					t.inputEl.placeholder = "***";
+					return t.setValue(s.listenhubApiKey).onChange(async (v) => {
+						s.listenhubApiKey = v;
+						await save();
+					});
+				});
+
+			new Setting(vEl)
+				.setName("ListenHub · Base URL（可选）")
+				.setDesc("默认 https://api.marswave.ai/openapi。代理或自建网关时填写。")
+				.addText((t) =>
+					t
+						.setPlaceholder("https://api.marswave.ai/openapi")
+						.setValue(s.listenhubBaseUrl)
+						.onChange(async (v) => {
+							s.listenhubBaseUrl = v.trim();
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("ListenHub · 音色（voice）")
+				.setDesc("默认 CN-Man-Beijing-V2（北京男声）。也可填 CN-Woman-* 等。")
+				.addText((t) =>
+					t
+						.setPlaceholder("CN-Man-Beijing-V2")
+						.setValue(s.listenhubVoice)
+						.onChange(async (v) => {
+							s.listenhubVoice = v.trim() || "CN-Man-Beijing-V2";
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("ListenHub · Model")
+				.setDesc("默认 flowtts。")
+				.addText((t) =>
+					t
+						.setPlaceholder("flowtts")
+						.setValue(s.listenhubModel)
+						.onChange(async (v) => {
+							s.listenhubModel = v.trim() || "flowtts";
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("背景音乐文件（可选）")
+				.setDesc("留空则用插件目录下 resource/mp3/65歌曲.mp3。可填仓库内任意 mp3 的 vault 相对路径或本机绝对路径。")
+				.addText((t) =>
+					t
+						.setPlaceholder("resource/mp3/65歌曲.mp3")
+						.setValue(s.videoBackgroundMusicPath)
+						.onChange(async (v) => {
+							s.videoBackgroundMusicPath = v.trim();
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("背景音乐音量（0.04–0.45）")
+				.setDesc("人声音量保持 1.0；BGM 推荐 0.10–0.20。")
+				.addText((t) =>
+					t
+						.setPlaceholder("0.14")
+						.setValue(String(s.videoBackgroundMusicVolume))
+						.onChange(async (v) => {
+							const n = Number(v);
+							if (!Number.isFinite(n)) return;
+							s.videoBackgroundMusicVolume = Math.min(0.45, Math.max(0.04, n));
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("片头静音长度（秒）")
+				.setDesc("默认 2.5，对应首帧停留时间。")
+				.addText((t) =>
+					t
+						.setPlaceholder("2.5")
+						.setValue(String(s.videoOpenSec))
+						.onChange(async (v) => {
+							const n = Number(v);
+							if (!Number.isFinite(n) || n < 0) return;
+							s.videoOpenSec = Math.min(10, n);
+							await save();
+						}),
+				);
+
+			new Setting(vEl)
+				.setName("片尾停留长度（秒）")
+				.setDesc("默认 3.5，对应尾帧停留时间。")
+				.addText((t) =>
+					t
+						.setPlaceholder("3.5")
+						.setValue(String(s.videoEndSec))
+						.onChange(async (v) => {
+							const n = Number(v);
+							if (!Number.isFinite(n) || n < 0) return;
+							s.videoEndSec = Math.min(10, n);
+							await save();
+						}),
+				);
+
+			addPromptArea(vEl, {
+				title: "口播稿提示词（{{finalContent}}）",
+				value: s.videoScriptPrompt,
+				heightPx: 220,
+				onChange: async (v) => {
+					s.videoScriptPrompt = v;
+					await save();
+				},
+			});
+		});
+
 		addFold(containerEl, "安全与调试", false, (secEl) => {
 			new Setting(secEl)
 				.setName("覆盖已有阶段文件前确认（推荐开启）")
@@ -847,6 +1071,115 @@ export class GZHSettingTab extends PluginSettingTab {
 				);
 		});
 	}
+
+	private async detectVideoPythonEnv(): Promise<string> {
+		const py = (this.pipelinePlugin.settings.videoPythonPath || "python3").trim();
+		const ff = this.pipelinePlugin.settings.videoFfmpegPath.trim();
+		const checks: string[] = [];
+
+		const pyVer = await runCommand(py, ["--version"]);
+		checks.push(formatCmdResult(`${py} --version`, pyVer));
+
+		const pipVer = await runCommand(py, ["-m", "pip", "--version"]);
+		checks.push(formatCmdResult(`${py} -m pip --version`, pipVer));
+
+		const importCheck = await runCommand(py, [
+			"-c",
+			"import importlib.util as u;mods=[('Pillow','PIL'),('edge_tts','edge_tts'),('playwright','playwright')];print('\\n'.join([f\"{name}: {'OK' if u.find_spec(spec) else 'MISSING'}\" for name,spec in mods]))",
+		]);
+		checks.push(formatCmdResult(`${py} import check`, importCheck));
+
+		checks.push(await probeFfmpegWithFallbacks(ff));
+
+		return [
+			"短视频环境检测结果",
+			`时间：${new Date().toLocaleString()}`,
+			"",
+			...checks,
+			"",
+			"说明：",
+			"- ListenHub 模式只强依赖 Python + Pillow + FFmpeg（edge_tts 可选）",
+			"- 若 FFmpeg 仅在终端可用，可把「FFmpeg 路径」填为 `/opt/homebrew/bin`（目录），与视频渲染脚本一致",
+			"- Python 模块若检测到 MISSING，可点击「一键安装/修复」",
+		].join("\n");
+	}
+
+	private async installVideoPythonEnv(): Promise<string> {
+		const adapter = this.app.vault.adapter as unknown as {
+			getFullPath?: (path: string) => string;
+		};
+		if (typeof adapter.getFullPath !== "function") {
+			throw new Error("当前 vault 不支持本地磁盘路径，无法创建 venv。");
+		}
+		const pluginRoot = adapter.getFullPath(
+			`${this.app.vault.configDir}/plugins/${this.pipelinePlugin.manifest.id}`,
+		);
+		const venvDir = nodePath.join(pluginRoot, ".video_venv");
+		const pyBase = (this.pipelinePlugin.settings.videoPythonPath || "python3").trim();
+
+		const logs: string[] = [];
+		logs.push(`插件目录：${pluginRoot}`);
+		logs.push(`venv 目录：${venvDir}`);
+
+		const mk = await runCommand(pyBase, ["-m", "venv", venvDir]);
+		logs.push(formatCmdResult(`${pyBase} -m venv "${venvDir}"`, mk));
+		if (mk.code !== 0) {
+			throw new Error(`创建 venv 失败：${shortErr(mk)}`);
+		}
+
+		const venvPython =
+			process.platform === "win32"
+				? nodePath.join(venvDir, "Scripts", "python.exe")
+				: nodePath.join(venvDir, "bin", "python");
+
+		const upPip = await runCommand(venvPython, [
+			"-m",
+			"pip",
+			"install",
+			"--upgrade",
+			"pip",
+			"setuptools",
+			"wheel",
+		]);
+		logs.push(formatCmdResult(`${venvPython} -m pip install --upgrade pip setuptools wheel`, upPip));
+		if (upPip.code !== 0) {
+			throw new Error(`升级 pip 失败：${shortErr(upPip)}`);
+		}
+
+		const installDeps = await runCommand(venvPython, [
+			"-m",
+			"pip",
+			"install",
+			"Pillow",
+			"edge-tts",
+			"playwright",
+		]);
+		logs.push(formatCmdResult(`${venvPython} -m pip install Pillow edge-tts playwright`, installDeps));
+		if (installDeps.code !== 0) {
+			throw new Error(`安装依赖失败：${shortErr(installDeps)}`);
+		}
+
+		const chromium = await runCommand(venvPython, [
+			"-m",
+			"playwright",
+			"install",
+			"chromium",
+		]);
+		logs.push(formatCmdResult(`${venvPython} -m playwright install chromium`, chromium));
+		// Chromium install failure is not fatal for current workflow.
+
+		this.pipelinePlugin.settings.videoPythonPath = venvPython;
+		await this.pipelinePlugin.saveSettings();
+
+		return [
+			"短视频 Python 环境安装/修复完成",
+			`已将「Python 可执行文件」更新为：${venvPython}`,
+			"",
+			...logs,
+			"",
+			"提示：如果 FFmpeg 仍不可用，请在「FFmpeg 路径或目录」填写 /opt/homebrew/bin 或 ffmpeg 绝对路径。",
+		].join("\n");
+	}
 }
 
 function addPromptArea(
@@ -863,4 +1196,165 @@ function addPromptArea(
 		area.inputEl.style.height = `${opts.heightPx}px`;
 		area.setValue(opts.value).onChange(async (v) => await opts.onChange(v));
 	});
+}
+
+type CmdResult = {
+	code: number;
+	stdout: string;
+	stderr: string;
+};
+
+async function runCommand(command: string, args: string[]): Promise<CmdResult> {
+	return await new Promise<CmdResult>((resolve) => {
+		const cp = spawn(command, args, {
+			windowsHide: true,
+			env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+		});
+		let stdout = "";
+		let stderr = "";
+		cp.stdout?.setEncoding("utf-8");
+		cp.stderr?.setEncoding("utf-8");
+		cp.stdout?.on("data", (chunk: string) => {
+			stdout += chunk;
+		});
+		cp.stderr?.on("data", (chunk: string) => {
+			stderr += chunk;
+		});
+		cp.on("error", (err) => {
+			resolve({
+				code: 127,
+				stdout,
+				stderr: `${stderr}\n${err instanceof Error ? err.message : String(err)}`.trim(),
+			});
+		});
+		cp.on("close", (code) => {
+			resolve({ code: code ?? 1, stdout, stderr });
+		});
+	});
+}
+
+function formatCmdResult(title: string, r: CmdResult): string {
+	const icon = r.code === 0 ? "✅" : "❌";
+	const body = (r.stdout || r.stderr || "(无输出)").trim();
+	const trimmed = body.length > 800 ? `${body.slice(0, 800)}\n...(省略)` : body;
+	return `${icon} ${title}\nexit=${r.code}\n${trimmed}`;
+}
+
+function shortErr(r: CmdResult): string {
+	const body = (r.stderr || r.stdout || "无输出").trim();
+	return body.length > 320 ? `${body.slice(0, 320)}…` : body;
+}
+
+function resolveFfmpegProbeCommand(
+	raw: string,
+): { command: string; args: string[] } {
+	const v = raw.trim();
+	if (!v) return { command: "ffmpeg", args: ["-version"] };
+	if (v.endsWith("/ffmpeg") || v.endsWith("\\ffmpeg.exe")) {
+		return { command: v, args: ["-version"] };
+	}
+	const ffmpegBin =
+		process.platform === "win32"
+			? nodePath.join(v, "ffmpeg.exe")
+			: nodePath.join(v, "ffmpeg");
+	return { command: ffmpegBin, args: ["-version"] };
+}
+
+type FfmpegProbeCandidate = { command: string; args: string[]; label: string };
+
+/** Obsidian GUI 常不带 brew 的 PATH；与 scripts/render_video.py 的常见路径兜底一致 */
+function ffmpegProbeCandidates(ffSetting: string): FfmpegProbeCandidate[] {
+	const ff = ffSetting.trim();
+	const out: FfmpegProbeCandidate[] = [];
+
+	if (ff.length > 0) {
+		const x = resolveFfmpegProbeCommand(ff);
+		out.push({
+			command: x.command,
+			args: x.args,
+			label: `${x.command} ${x.args.join(" ")}（插件设置）`,
+		});
+		return out;
+	}
+
+	out.push({
+		command: "ffmpeg",
+		args: ["-version"],
+		label: "ffmpeg -version（依赖 GUI 进程的 PATH）",
+	});
+
+	if (process.platform === "darwin") {
+		out.push({
+			command: "/opt/homebrew/bin/ffmpeg",
+			args: ["-version"],
+			label: "/opt/homebrew/bin/ffmpeg -version（Apple Silicon Homebrew 常见路径）",
+		});
+		out.push({
+			command: "/usr/local/bin/ffmpeg",
+			args: ["-version"],
+			label: "/usr/local/bin/ffmpeg -version（Intel Homebrew / 旧路径）",
+		});
+	} else if (process.platform === "linux") {
+		out.push({
+			command: "/usr/bin/ffmpeg",
+			args: ["-version"],
+			label: "/usr/bin/ffmpeg -version",
+		});
+	}
+
+	return out;
+}
+
+async function probeFfmpegWithFallbacks(
+	ffSettingTrimmed: string,
+): Promise<string> {
+	const cands = ffmpegProbeCandidates(ffSettingTrimmed.trim());
+	const failBlocks: string[] = [];
+
+	for (const c of cands) {
+		const r = await runCommand(c.command, c.args);
+		if (r.code === 0) {
+			let hint = "";
+			if (
+				process.platform === "darwin" &&
+				ffSettingTrimmed.trim().length === 0 &&
+				c.command !== "ffmpeg"
+			) {
+				hint =
+					"\n（说明：PATH 里没有 ffmpeg，但已在磁盘上找到。建议把「FFmpeg 路径」填为 `/opt/homebrew/bin`，与视频渲染脚本一致并避免误判。）";
+			}
+			return `${formatCmdResult(`${c.label} → 已通过`, r)}${hint}`;
+		}
+		failBlocks.push(formatCmdResult(c.label, r));
+
+		const msg = `${r.stderr}${r.stdout}`.toLowerCase();
+		const looksMissing =
+			r.code === 127 &&
+			(msg.includes("enoent") || msg.includes("spawn"));
+		if (!looksMissing && r.code !== 127) {
+			return [
+				formatCmdResult(`${c.label}（已找到 ffmpeg 但命令失败）`, r),
+				"",
+				"请根据上方输出排查权限、架构或 ffmpeg 损坏等问题。",
+			].join("\n");
+		}
+	}
+
+	return [
+		"❌ FFmpeg：下列候选均未通过检测",
+		"",
+		failBlocks.join("\n\n"),
+		"",
+		macOsFfmpegInstallHint(ffSettingTrimmed.trim()),
+	].join("\n");
+}
+
+function macOsFfmpegInstallHint(ffSetting: string): string {
+	if (process.platform !== "darwin") {
+		return "请先安装 FFmpeg 并把「FFmpeg 路径」填为 ffmpeg 所在目录或可执行文件的完整路径。";
+	}
+	if (ffSetting.length > 0) {
+		return `仍失败时请确认路径正确；终端执行 \`ffmpeg -version\` 可用的目录填到设置里。\n未曾安装可先：\`brew install ffmpeg\`。`;
+	}
+	return "macOS：`brew install ffmpeg`，然后在设置「FFmpeg 路径」填 `/opt/homebrew/bin`（Apple Silicon）或 ffmpeg 的实际目录。";
 }

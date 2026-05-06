@@ -6,6 +6,7 @@ import {
 	DEFAULT_HUMANIZE_PROMPT,
 	DEFAULT_OUTLINE_PROMPT,
 	DEFAULT_REVIEW_PROMPT,
+	DEFAULT_VIDEO_SCRIPT_PROMPT,
 	DEFAULT_WRITING_STYLE,
 } from "../templates/defaultPrompts";
 
@@ -74,4 +75,17 @@ export const DEFAULT_SETTINGS: GzhWritingPipelineSettings = {
 	mokaCardSizeWxH: "",
 	mokaCardExportPixelRatio: 3,
 	mokaCardSlideCount: 6,
+
+	videoScriptPrompt: DEFAULT_VIDEO_SCRIPT_PROMPT,
+	videoPythonPath: "python3",
+	videoFfmpegPath: "",
+	videoTtsEngine: "listenhub",
+	listenhubApiKey: "",
+	listenhubBaseUrl: "",
+	listenhubVoice: "CN-Man-Beijing-V2",
+	listenhubModel: "flowtts",
+	videoBackgroundMusicPath: "",
+	videoBackgroundMusicVolume: 0.14,
+	videoOpenSec: 2.5,
+	videoEndSec: 3.5,
 };

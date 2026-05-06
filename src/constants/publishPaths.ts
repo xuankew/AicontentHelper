@@ -12,8 +12,6 @@ export const PUBLISH_LAYOUT = {
 	illustrationsDir: "assets/illustrations",
 	illustrationOutline: "assets/illustrations/outline.md",
 	illustrationPromptsDir: "assets/illustrations/prompts",
-	/** 旧版 API 小红书卡片目录（保留兼容） */
-	imageCardsLegacyDir: "assets/image-cards",
 	wechatCardsDir: "publish/cards",
 	/** Last publish diagnostics for missing body images (overwrite each run). */
 	gzhPublishTraceLastMarkdown: "publish/logs/gzh-publish-trace-last.md",
@@ -24,6 +22,18 @@ export const MOKA_LAYOUT = {
 	rootDir: "assets/moka-cards",
 	deckJson: "assets/moka-cards/deck.json",
 	outlineMd: "assets/moka-cards/outline.md",
+} as const;
+
+/** 「视频」按钮：口播稿、渲染配置与最终 mp4 等产物 */
+export const VIDEO_LAYOUT = {
+	rootDir: "assets/video",
+	mokaFramesDir: "assets/video/moka-frames",
+	voiceover: "assets/video/voiceover.md",
+	platformPostsMd: "assets/video/platform-posts.md",
+	platformPostsJson: "assets/video/platform-posts.json",
+	configJson: "assets/video/video_config.json",
+	renderLog: "assets/video/render.log",
+	output: "assets/video/xiaohongshu.mp4",
 } as const;
 
 /** Relative to publish/wechat-input.md */

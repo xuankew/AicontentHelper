@@ -1,4 +1,4 @@
-# 公众号写作流水线助手（Obsidian 插件）
+# AI内容助手（Obsidian 插件）
 
 社区插件 ID：`gzh-writing-pipeline`。市场页（版本说明以仓库内 `manifest.json` / `CHANGELOG.md` 为准）：[Obsidian Plugins](https://obsidian.md/plugins?id=gzh-writing-pipeline)。
 
@@ -29,7 +29,7 @@
 
 ## 设置
 
-进入 **设置 → 公众号写作流水线助手**：
+进入 **设置 → AI内容助手**：
 
 - **Provider**：OpenAI / DeepSeek / 豆包（均按 OpenAI Chat Completions 兼容接口调用）
 - **API Key / Base URL / Model**

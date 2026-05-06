@@ -1,7 +1,7 @@
 {
 	"name": "gzh-writing-pipeline",
 	"version": "0.2.0",
-	"description": "Obsidian plugin: 公众号写作流水线助手",
+	"description": "Obsidian plugin: AI内容助手",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

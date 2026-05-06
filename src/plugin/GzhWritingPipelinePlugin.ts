@@ -10,13 +10,6 @@ import { coerceWechatSimpleCoverBgId } from "../services/WechatSimpleCoverServic
 import { PipelineService } from "../services/PipelineService";
 import { registerMarkdownEditorToolbar } from "../ui/EditorToolbar";
 
-const LEGACY_SPLIT_SIZE_KEYS = [
-	"imageSizeWechatCover",
-	"imageSizeWechatIllustration",
-	"imageSizeXhsCover",
-	"imageSizeXhsBody",
-] as const;
-
 const GZH_FIGURE_DRAFT_APPENDIX = `
 
 附图（正文**不少于 1 处、至多 3 处**，分散插在小节后）：请用 Markdown 伪链接占位，形如
@@ -43,34 +36,7 @@ function mergeStoredSettings(raw: unknown): GzhWritingPipelineSettings {
 	if (!raw || typeof raw !== "object") {
 		return base;
 	}
-	const plain = raw as Record<string, unknown>;
-	const legacyFlatSize =
-		typeof plain.imageSize === "string" ? plain.imageSize.trim() : "";
-	const stripped: Record<string, unknown> = { ...plain };
-	delete stripped.imageSize;
-
-	const LEGACY_DROP = new Set<string>([
-		"baoyuSkillsRootPath",
-		"bunCommand",
-		"imageGenerationMode",
-		"baoyuImagineCommandTemplate",
-		"coverBaoyuType",
-		"coverBaoyuPalette",
-		"coverBaoyuRendering",
-		"coverBaoyuTextMode",
-		"coverBaoyuMood",
-		"illustratorBaoyuType",
-		"illustratorBaoyuStyle",
-		"illustratorBaoyuPalette",
-		"xhsBaoyuStyle",
-		"xhsBaoyuPalette",
-		"xhsBaoyuLayout",
-		"imageCompressQuality",
-		"imageCompressKeepOriginal",
-	]);
-	for (const k of LEGACY_DROP) delete stripped[k];
-
-	const d = stripped as Partial<GzhWritingPipelineSettings>;
+	const d = raw as Partial<GzhWritingPipelineSettings>;
 	const merged: GzhWritingPipelineSettings = {
 		...base,
 		...d,
@@ -78,46 +44,22 @@ function mergeStoredSettings(raw: unknown): GzhWritingPipelineSettings {
 		deepseek: { ...base.deepseek, ...(d.deepseek ?? {}) },
 		doubao: { ...base.doubao, ...(d.doubao ?? {}) },
 	};
-
-	if (legacyFlatSize.length > 0) {
-		const userTouchedSplit = LEGACY_SPLIT_SIZE_KEYS.some((k) => k in plain);
-		if (!userTouchedSplit) {
-			merged.imageSizeWechatCover = legacyFlatSize;
-			merged.imageSizeWechatIllustration = legacyFlatSize;
-			merged.imageSizeXhsCover = legacyFlatSize;
-			merged.imageSizeXhsBody = legacyFlatSize;
-		}
-	}
-
-	if (
-		typeof plain.imageCardCount === "number" &&
-		typeof plain.mokaCardSlideCount !== "number"
-	) {
-		const n = plain.imageCardCount as number;
-		merged.mokaCardSlideCount = Math.min(10, Math.max(4, Math.floor(n)));
-	}
-
-	const legacyTpl = plain.mokaCardTemplate;
-	const legacyPal = plain.mokaCardPalette;
 	merged.mokaCardTemplateXhs = coerceCardTemplate(
-		plain.mokaCardTemplateXhs ?? legacyTpl,
+		merged.mokaCardTemplateXhs,
 		merged.mokaCardTemplateXhs,
 	);
 	merged.mokaCardTemplateWechat = coerceCardTemplate(
-		plain.mokaCardTemplateWechat ?? legacyTpl,
+		merged.mokaCardTemplateWechat,
 		merged.mokaCardTemplateWechat,
 	);
 	merged.mokaCardPaletteXhs = coerceCardPalette(
-		plain.mokaCardPaletteXhs ?? legacyPal,
+		merged.mokaCardPaletteXhs,
 		merged.mokaCardPaletteXhs,
 	);
 	merged.mokaCardPaletteWechat = coerceCardPalette(
-		plain.mokaCardPaletteWechat ?? legacyPal,
+		merged.mokaCardPaletteWechat,
 		merged.mokaCardPaletteWechat,
 	);
-
-	delete (merged as unknown as Record<string, unknown>).mokaCardTemplate;
-	delete (merged as unknown as Record<string, unknown>).mokaCardPalette;
 
 	const prOr = merged.mokaCardExportPixelRatio;
 	if (prOr !== 2 && prOr !== 3 && prOr !== 4) {
@@ -175,6 +117,8 @@ export default class GzhWritingPipelinePlugin
 				void this.pipeline.publishToWechatOfficial(),
 			imageCards: () =>
 				void this.pipeline.generateImageCards(),
+			video: () =>
+				void this.pipeline.generateVideoFromXhsCards(),
 		});
 
 		this.addRibbonIcon("file-text", "公众号写作流水线：点此展开菜单", (evt) => {
@@ -272,6 +216,14 @@ export default class GzhWritingPipelinePlugin
 				}),
 		);
 
+		menu.addItem((item) =>
+			item
+				.setTitle("视频 · 小红书图文转 30 秒短视频")
+				.onClick(() => {
+					void this.pipeline.generateVideoFromXhsCards();
+				}),
+		);
+
 		menu.addSeparator();
 
 		menu.addItem((item) =>
@@ -348,6 +300,11 @@ export default class GzhWritingPipelinePlugin
 			"gzh-image-cards-wechat",
 			"GZH Pipeline: Moka 图文卡片（公众号 · 使用该侧模板配色）",
 			() => void this.pipeline.generateImageCards("wechat"),
+		);
+		reg(
+			"gzh-video-xhs",
+			"GZH Pipeline: 视频（小红书图文转 30 秒短视频）",
+			() => void this.pipeline.generateVideoFromXhsCards(),
 		);
 	}
 }

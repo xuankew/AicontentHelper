@@ -126,6 +126,7 @@ export class MokaCardRenderService {
 		deck: NativeMokaDeck;
 		exportPixelRatio: number;
 		cardWxH?: string;
+		outputRootDir?: string;
 	}): Promise<string[]> {
 		const { deck } = params;
 		const dims = parseMokaCardDimensions(params.cardWxH ?? "");
@@ -215,7 +216,8 @@ export class MokaCardRenderService {
 
 				const buf = dataUrlToArrayBuffer(dataUrl);
 				const name = `${String(idx + 1).padStart(2, "0")}-${slide.kind}.png`;
-				const rel = joinVaultPath(MOKA_LAYOUT.rootDir, name);
+				const outRoot = params.outputRootDir?.trim() || MOKA_LAYOUT.rootDir;
+				const rel = joinVaultPath(outRoot, name);
 				const vaultPath = joinVaultPath(params.projectRoot, rel);
 				await this.files.writeBinaryFile(vaultPath, buf);
 				pngPathsOut.push(normalizeVaultPath(vaultPath));

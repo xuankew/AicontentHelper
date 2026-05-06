@@ -4,6 +4,7 @@ import type {
 	ArticleMeta,
 	GzhWritingPipelineSettings,
 	MokaCardPlatform,
+	NativeMokaDeck,
 } from "../types";
 import { STAGE_FILES } from "../templates/fileTemplates";
 import { isoNow } from "../templates/metaTemplate";
@@ -20,10 +21,16 @@ import { PromptService } from "./PromptService";
 import { StateService } from "./StateService";
 import { ImageGenerationService } from "./ImageGenerationService";
 import { PublishOrchestrator } from "./PublishOrchestrator";
+import { VideoRenderService } from "./VideoRenderService";
+import { MokaCardRenderService } from "./MokaCardRenderService";
 import { confirmOverwrite } from "../ui/ConfirmModal";
 import { showErrorNotice, showSuccessNotice } from "../ui/NoticeHelper";
 import { WorkingModal, type WorkingModalOptions } from "../ui/LoadingModal";
-import { PUBLISH_LAYOUT } from "../constants/publishPaths";
+import {
+	MOKA_LAYOUT,
+	PUBLISH_LAYOUT,
+	VIDEO_LAYOUT,
+} from "../constants/publishPaths";
 
 export class PipelineService {
 	private readonly files: FileService;
@@ -33,6 +40,7 @@ export class PipelineService {
 	private readonly prompts: PromptService;
 	private readonly imgGen: ImageGenerationService;
 	private readonly publishFlows: PublishOrchestrator;
+	private readonly video: VideoRenderService;
 
 	constructor(
 		private readonly app: App,
@@ -52,6 +60,11 @@ export class PipelineService {
 			this.imgGen,
 			getSettings,
 			(root, meta) => this.persistMeta(root, meta),
+			pluginManifestId,
+		);
+		this.video = new VideoRenderService(
+			app,
+			getSettings,
 			pluginManifestId,
 		);
 	}
@@ -164,6 +177,225 @@ export class PipelineService {
 			);
 			showSuccessNotice(
 				"Native Moka 卡片已生成，已打开 outline。详见 assets/moka-cards/",
+			);
+		} catch (e) {
+			showErrorNotice(e instanceof Error ? e.message : String(e));
+		} finally {
+			working.close();
+		}
+	}
+
+	/** 「视频」按钮：生成口播 + 三平台发布文案，并分别导出三条平台视频。 */
+	async generateVideoFromXhsCards(): Promise<void> {
+		if (!Platform.isDesktopApp) {
+			showErrorNotice("「视频」仅支持 Obsidian 桌面端。");
+			return;
+		}
+
+		const active = this.app.workspace.getActiveFile();
+		if (!active) {
+			showErrorNotice("请先打开一个仓库文件。");
+			return;
+		}
+
+		const working = new WorkingModal(this.app, {
+			title: "视频",
+			message: "正在校验小红书图文产物…",
+		});
+		try {
+			const projectRoot = await this.state.resolvePublishedProjectRoot(
+				active.path,
+			);
+			const meta = projectRoot
+				? await this.state.readMeta(projectRoot)
+				: null;
+			if (!projectRoot || !meta) {
+				throw new Error("当前不在公众号文章项目中。");
+			}
+			if (meta.status !== "reviewed") {
+				throw new Error("请先完成审稿，生成 04-final.md 后再生成视频。");
+			}
+			const finalPath = joinVaultPath(projectRoot, STAGE_FILES.final);
+			if (!(await this.files.pathExists(finalPath))) {
+				throw new Error("请先完成审稿，生成 04-final.md 后再生成视频。");
+			}
+
+			const xhs = meta.publish?.mokaCards;
+			const cardsDirReady =
+				xhs &&
+				xhs.platform === "xhs" &&
+				Array.isArray(xhs.pngPaths) &&
+				xhs.pngPaths.length > 0;
+			if (!cardsDirReady) {
+				throw new Error("还未生成小红书图文");
+			}
+
+			const settings = this.getSettings();
+			this.assertProviderReady(settings);
+			assertApiKeyConfigured(settings);
+
+			working.updateMessage({ message: "正在请求模型生成口播稿与三平台发布文案…" });
+			const finalMd = await this.files.readTextFile(finalPath);
+			const scriptPrompt = this.prompts.fill(settings.videoScriptPrompt, {
+				authorProfilePrompt: settings.authorProfilePrompt,
+				writingStylePrompt: settings.writingStylePrompt,
+				finalContent: finalMd,
+				sourceContent: "",
+				outlineContent: "",
+				draftContent: "",
+				humanizedContent: "",
+			});
+			const rawBundle = await this.llm.generate(scriptPrompt);
+			const bundle = parseVideoBundle(rawBundle);
+			const voiceover = sanitizeVoiceoverText(bundle.voiceover);
+			if (voiceover.length < 40) {
+				throw new Error(
+					"模型返回的口播稿过短，请检查 finalContent 与「口播稿提示词」。",
+				);
+			}
+
+			const videoDir = joinVaultPath(projectRoot, VIDEO_LAYOUT.rootDir);
+			await this.files.mkdirp(videoDir);
+
+			const voiceoverVault = joinVaultPath(
+				projectRoot,
+				VIDEO_LAYOUT.voiceover,
+			);
+			await this.files.writeTextFile(
+				voiceoverVault,
+				`# 口播稿（约 30 秒，${voiceover.length} 字）\n\n${voiceover}\n`,
+			);
+
+			const accountInfo = settings.wechatAuthor.trim() || "@真实爸爸";
+
+			const postsMd = joinVaultPath(projectRoot, VIDEO_LAYOUT.platformPostsMd);
+			const postsJson = joinVaultPath(projectRoot, VIDEO_LAYOUT.platformPostsJson);
+			await this.files.writeTextFile(postsMd, formatPlatformPostsMarkdown(bundle));
+			await this.files.writeTextFile(
+				postsJson,
+				JSON.stringify(bundle, null, 2) + "\n",
+			);
+
+			const configVault = joinVaultPath(
+				projectRoot,
+				VIDEO_LAYOUT.configJson,
+			);
+			const configPayload = {
+				generatedAt: isoNow(),
+				platformTitles: {
+					shipinhao: bundle.shipinhao.title,
+					xiaohongshu: bundle.xiaohongshu.title,
+					douyin: bundle.douyin.title,
+				},
+				accountInfo,
+				ttsEngine: settings.videoTtsEngine,
+				openSec: settings.videoOpenSec,
+				endSec: settings.videoEndSec,
+				cardsCount: xhs.pngPaths?.length ?? 0,
+			};
+			await this.files.writeTextFile(
+				configVault,
+				JSON.stringify(configPayload, null, 2) + "\n",
+			);
+
+			working.updateMessage({
+				message:
+					"正在用 Moka 模版导出视频用图片，并调用 ListenHub + FFmpeg 合成三平台视频，可能需要 1–3 分钟…",
+			});
+
+			const deckPath =
+				xhs?.deckVaultPath || joinVaultPath(projectRoot, MOKA_LAYOUT.deckJson);
+			if (!(await this.files.pathExists(deckPath))) {
+				throw new Error("缺少 Moka deck.json，无法按模版重导视频图片。请先重新生成小红书图文。");
+			}
+			const deckRaw = await this.files.readTextFile(deckPath);
+			const deck = JSON.parse(deckRaw) as NativeMokaDeck;
+			const mokaRender = new MokaCardRenderService(this.files);
+			const allCardPaths = await mokaRender.exportDeckToVault({
+				projectRoot,
+				deck,
+				exportPixelRatio: settings.mokaCardExportPixelRatio,
+				cardWxH: settings.mokaCardSizeWxH,
+				outputRootDir: VIDEO_LAYOUT.mokaFramesDir,
+			});
+			const coverPath =
+				allCardPaths.find((p) => /(?:^|\/)\d+-cover\.png$/i.test(p)) ||
+				allCardPaths[0];
+			const middlePaths = allCardPaths.filter(
+				(p) =>
+					p !== coverPath &&
+					!/(?:^|\/)\d+-end\.png$/i.test(p),
+			);
+			const fallbackMiddle = middlePaths.length > 0 ? middlePaths : allCardPaths;
+
+			let result;
+			try {
+				result = await this.video.render({
+					outputDirVault: videoDir,
+					coverPngVault: coverPath,
+					middlePngVaultPaths: fallbackMiddle,
+					voiceover,
+					platformCopies: {
+						xiaohongshu: {
+							title: bundle.xiaohongshu.title,
+							openingText: firstSentence(voiceover, bundle.xiaohongshu.body),
+							endingText: lastSentence(voiceover, bundle.xiaohongshu.body),
+						},
+						douyin: {
+							title: bundle.douyin.title,
+							openingText: firstSentence(voiceover, bundle.douyin.body),
+							endingText: lastSentence(voiceover, bundle.douyin.body),
+						},
+						shipinhao: {
+							title: bundle.shipinhao.title,
+							openingText: firstSentence(voiceover, bundle.shipinhao.body),
+							endingText: lastSentence(voiceover, bundle.shipinhao.body),
+						},
+					},
+					accountInfo,
+				});
+			} catch (renderErr) {
+				const msg =
+					renderErr instanceof Error
+						? renderErr.message
+						: String(renderErr);
+				const metaFail: ArticleMeta = {
+					...meta,
+					updatedAt: isoNow(),
+					publish: {
+						...(meta.publish ?? {}),
+						video: {
+							lastRunAt: isoNow(),
+							scriptVaultPath: voiceoverVault,
+							configVaultPath: configVault,
+							ttsEngine: settings.videoTtsEngine,
+							error: msg.slice(0, 1500),
+						},
+					},
+				};
+				await this.persistMeta(projectRoot, metaFail);
+				throw renderErr;
+			}
+
+			const metaOk: ArticleMeta = {
+				...meta,
+				updatedAt: isoNow(),
+				publish: {
+					...(meta.publish ?? {}),
+					video: {
+						lastRunAt: isoNow(),
+						scriptVaultPath: voiceoverVault,
+						configVaultPath: configVault,
+						outputVaultPath: result.outputVaultPath,
+						voiceSec: estimateVoiceoverSeconds(voiceover),
+						ttsEngine: settings.videoTtsEngine,
+					},
+				},
+			};
+			await this.persistMeta(projectRoot, metaOk);
+
+			showSuccessNotice(
+				`视频已生成：${Object.values(result.outputs).join("、")}；文案见 ${VIDEO_LAYOUT.platformPostsMd}。`,
 			);
 		} catch (e) {
 			showErrorNotice(e instanceof Error ? e.message : String(e));
@@ -665,4 +897,155 @@ export class PipelineService {
 	private async openPath(path: string): Promise<void> {
 		await this.openMarkdown(normalizeVaultPath(path));
 	}
+}
+
+/**
+ * Strip markdown noise, the 【口播稿】 header (per default prompt), emoji digit boxes,
+ * stray bracket annotations, and outer fences so we hand a clean spoken script to TTS.
+ */
+function sanitizeVoiceoverText(raw: string): string {
+	let s = raw.replace(/^\s*```[a-zA-Z]*\s*/g, "").replace(/```\s*$/g, "");
+	s = s.replace(/【口播稿】/g, "");
+	s = s.replace(/^#+\s.*$/gm, "");
+	s = s.replace(/\*\*/g, "").replace(/__/g, "");
+	s = s.replace(/^[\-\*]\s+/gm, "");
+	s = s.replace(/^\s*[0-9]+[\.、]\s+/gm, "");
+	s = s.replace(/[\u200B-\u200D\uFEFF]/g, "");
+	return s.replace(/\s+/g, " ").trim();
+}
+
+function splitIntoSentences(text: string): string[] {
+	const out: string[] = [];
+	const chunks = text.split(/(?<=[。！？!?])/);
+	for (const chunk of chunks) {
+		const t = chunk.trim();
+		if (t.length > 0) out.push(t);
+	}
+	return out;
+}
+
+type PlatformPost = { title: string; body: string; tags: string[] };
+type VideoBundle = {
+	voiceover: string;
+	shipinhao: PlatformPost;
+	xiaohongshu: PlatformPost;
+	douyin: PlatformPost;
+};
+
+function parseVideoBundle(raw: string): VideoBundle {
+	const voiceover = blockAfter(raw, /【口播稿】/i);
+	const shipTitle = blockAfter(raw, /视频号发布文案[\s\S]*?【标题】/i);
+	const shipBody = blockAfter(raw, /视频号发布文案[\s\S]*?【正文】/i);
+	const xhsTitle = blockAfter(raw, /小红书发布文案[\s\S]*?【标题】/i);
+	const xhsBody = blockAfter(raw, /小红书发布文案[\s\S]*?【正文】/i);
+	const xhsTags = splitTags(blockAfter(raw, /小红书发布文案[\s\S]*?【标签】/i));
+	const dyTitle = blockAfter(raw, /抖音发布文案[\s\S]*?【标题】/i);
+	const dyBody = blockAfter(raw, /抖音发布文案[\s\S]*?【正文】/i);
+	const dyTags = splitTags(blockAfter(raw, /抖音发布文案[\s\S]*?【标签】/i));
+
+	return {
+		voiceover: voiceover || raw,
+		shipinhao: {
+			title: shipTitle || "孩子一拖再拖，先别急着催",
+			body: shipBody || "今天分享一个我家亲测有效的小方法。",
+			tags: [],
+		},
+		xiaohongshu: {
+			title: xhsTitle || "别再只会催作业：一个真实爸爸的反思",
+			body: xhsBody || "记录一个今晚就能试的小方法。",
+			tags: xhsTags,
+		},
+		douyin: {
+			title: dyTitle || "孩子写作业拖拉？问题可能不在孩子",
+			body: dyBody || "3秒抓住核心问题，给你一个可落地的方法。",
+			tags: dyTags,
+		},
+	};
+}
+
+function blockAfter(raw: string, marker: RegExp): string {
+	const m = marker.exec(raw);
+	if (!m) return "";
+	const s = raw.slice(m.index + m[0].length);
+	const end = s.search(/\n---\n|^##\s+\d+\.?/m);
+	const out = (end >= 0 ? s.slice(0, end) : s).trim();
+	return out.replace(/^[:：\s]+/, "").trim();
+}
+
+function splitTags(raw: string): string[] {
+	if (!raw.trim()) return [];
+	return raw
+		.split(/[\n,，\s]+/)
+		.map((x) => x.trim())
+		.filter((x) => x.length > 0)
+		.map((x) => (x.startsWith("#") ? x : `#${x}`))
+		.slice(0, 10);
+}
+
+function formatPlatformPostsMarkdown(bundle: VideoBundle): string {
+	return [
+		"# 短视频平台发布文案",
+		"",
+		"## 1. 30秒视频口播稿",
+		"",
+		"【口播稿】",
+		bundle.voiceover,
+		"",
+		"---",
+		"",
+		"## 2. 视频号发布文案",
+		"",
+		"【标题】",
+		bundle.shipinhao.title,
+		"",
+		"【正文】",
+		bundle.shipinhao.body,
+		"",
+		"---",
+		"",
+		"## 3. 小红书发布文案",
+		"",
+		"【标题】",
+		bundle.xiaohongshu.title,
+		"",
+		"【正文】",
+		bundle.xiaohongshu.body,
+		"",
+		"【标签】",
+		bundle.xiaohongshu.tags.join(" "),
+		"",
+		"---",
+		"",
+		"## 4. 抖音发布文案",
+		"",
+		"【标题】",
+		bundle.douyin.title,
+		"",
+		"【正文】",
+		bundle.douyin.body,
+		"",
+		"【标签】",
+		bundle.douyin.tags.join(" "),
+		"",
+	].join("\n");
+}
+
+function firstSentence(voiceover: string, fallbackBody: string): string {
+	const lines = splitIntoSentences(voiceover);
+	return lines[0] || splitIntoSentences(fallbackBody)[0] || voiceover.slice(0, 40);
+}
+
+function lastSentence(voiceover: string, fallbackBody: string): string {
+	const lines = splitIntoSentences(voiceover);
+	const fb = splitIntoSentences(fallbackBody);
+	return (
+		lines[lines.length - 1] ||
+		fb[fb.length - 1] ||
+		voiceover.slice(Math.max(0, voiceover.length - 40))
+	);
+}
+
+function estimateVoiceoverSeconds(voiceover: string): number {
+	// Rough Mandarin speech estimate: ~4.3 chars/sec.
+	return Math.max(8, Math.round((voiceover.length / 4.3) * 10) / 10);
 }
