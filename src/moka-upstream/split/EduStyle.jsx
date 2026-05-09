@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function EduCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, "EDUCATION");
   return (
     <div style={{ background: "#faf8f5", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 教育风格背景 */}
@@ -36,7 +38,7 @@ export function EduCover({ s, a, total, ed }) {
           </div>
           <div>
             <div style={{ fontSize: 9, color: a, letterSpacing: "3px", fontWeight: 600, marginBottom: 4 }}>KNOWLEDGE HUB</div>
-            <div style={{ fontSize: 10, color: "#888" }}>{s.category || "EDUCATION"}</div>
+            {plat != null ? <div style={{ fontSize: 10, color: "#888" }}>{plat}</div> : null}
           </div>
         </div>
         

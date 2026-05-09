@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function CreamyCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, "CREAMY");
   return (
     <div style={{ background: "#fffbf5", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 柔和的圆形装饰 - 奶油质感 */}
@@ -19,10 +21,12 @@ export function CreamyCover({ s, a, total, ed, emojiEditor }) {
       
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "56px 40px 40px", position: "relative", zIndex: 1 }}>
         {/* 分类标签 - 圆角胶囊形 */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 28, padding: "8px 20px", background: `${a}12`, borderRadius: 20, alignSelf: "flex-start" }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: a }} />
-          <span style={{ fontSize: 10, color: a, letterSpacing: "2px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || "CREAMY"}</span>
-        </div>
+        {plat != null ? (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 28, padding: "8px 20px", background: `${a}12`, borderRadius: 20, alignSelf: "flex-start" }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: a }} />
+            <span style={{ fontSize: 10, color: a, letterSpacing: "2px", fontWeight: 600 }}>{plat}</span>
+          </div>
+        ) : null}
         
         {/* 大号装饰 emoji */}
         <div style={{ marginBottom: 24 }}>

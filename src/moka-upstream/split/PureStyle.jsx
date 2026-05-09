@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function PureCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, "PURE");
   return (
     <div style={{ background: "#fff", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 纯净渐变背景 */}
@@ -23,10 +25,12 @@ export function PureCover({ s, a, total, ed, emojiEditor }) {
               onStyleChange={emojiEditor?.onStyleChange}
             />
           </div>
-          <div>
-            <div style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600, marginBottom: 4 }}>{s.category?.toUpperCase?.() || "PURE"}</div>
-            <div style={{ width: 24, height: 2, background: `${a}40`, borderRadius: 1 }} />
-          </div>
+          {plat != null ? (
+            <div>
+              <div style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600, marginBottom: 4 }}>{plat}</div>
+              <div style={{ width: 24, height: 2, background: `${a}40`, borderRadius: 1 }} />
+            </div>
+          ) : null}
         </div>
         
         {/* 标题区域 - 居中布局 */}

@@ -1746,6 +1746,8 @@ def main() -> int:
             # 小红书 cover from Moka). If unset or the file is missing we fall
             # back to the legacy Pillow warm open frame.
             op_override = str(pcopy.get("open_frame_png") or "").strip()
+            if not op_override and isinstance(vcfg, dict):
+                op_override = str(vcfg.get("openFramePngPath") or "").strip()
             if op_override:
                 op_src = Path(op_override).expanduser()
                 if op_src.is_file():

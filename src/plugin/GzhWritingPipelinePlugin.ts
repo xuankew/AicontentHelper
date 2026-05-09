@@ -121,7 +121,7 @@ export default class GzhWritingPipelinePlugin
 				void this.pipeline.generateVideoFromXhsCards(),
 		});
 
-		this.addRibbonIcon("file-text", "公众号写作流水线：点此展开菜单", (evt) => {
+		this.addRibbonIcon("file-text", "AI内容助手：点此展开菜单", (evt) => {
 			this.buildPipelineMenu().showAtMouseEvent(evt);
 		});
 
@@ -130,7 +130,7 @@ export default class GzhWritingPipelinePlugin
 		this.statusBarInner.addClass("gzh-pipeline-status-inner");
 		this.statusBarEl.style.cursor = "pointer";
 		this.statusBarEl.title =
-			"公众号写作流水线：点击展开菜单 · 也可用命令面板（Ctrl/Cmd+P）搜索「GZH」";
+			"AI内容助手：点击展开菜单 · 命令面板（Ctrl/Cmd+P）可搜「AI内容助手」";
 
 		this.registerDomEvent(this.statusBarEl, "click", (evt: MouseEvent) => {
 			this.buildPipelineMenu().showAtMouseEvent(evt);
@@ -165,7 +165,7 @@ export default class GzhWritingPipelinePlugin
 			this.statusBarInner.textContent = ctx.text;
 		} catch {
 			if (this.statusBarInner) {
-				this.statusBarInner.textContent = "GZH: —";
+				this.statusBarInner.textContent = "AI助手: —";
 			}
 		}
 	}
@@ -260,50 +260,50 @@ export default class GzhWritingPipelinePlugin
 			});
 		};
 
-		reg("gzh-outline", "GZH Pipeline: 列提纲", () =>
+		reg("gzh-outline", "AI内容助手: 列提纲", () =>
 			this.pipeline.outlineFromSourceCard(),
 		);
-		reg("gzh-draft", "GZH Pipeline: 扩写", () =>
+		reg("gzh-draft", "AI内容助手: 扩写", () =>
 			this.pipeline.draftFromOutline(),
 		);
-		reg("gzh-humanize", "GZH Pipeline: 去 AI 味", () =>
+		reg("gzh-humanize", "AI内容助手: 去 AI 味", () =>
 			this.pipeline.humanizeFromDraft(),
 		);
-		reg("gzh-review", "GZH Pipeline: 审稿", () =>
+		reg("gzh-review", "AI内容助手: 审稿", () =>
 			this.pipeline.reviewFromHumanized(),
 		);
-		reg("gzh-open-project-folder", "GZH Pipeline: 打开文章项目目录", () =>
+		reg("gzh-open-project-folder", "AI内容助手: 打开文章项目目录", () =>
 			this.pipeline.openProjectEntryFile(),
 		);
-		reg("gzh-open-review-report", "GZH Pipeline: 打开审稿报告", () =>
+		reg("gzh-open-review-report", "AI内容助手: 打开审稿报告", () =>
 			this.pipeline.openReviewReport(),
 		);
-		reg("gzh-copy-final", "GZH Pipeline: 复制最终文章", () =>
+		reg("gzh-copy-final", "AI内容助手: 复制最终文章", () =>
 			this.pipeline.copyFinalArticle(),
 		);
 		reg(
 			"gzh-publish-wechat",
-			"GZH Pipeline: 发布到公众号（官方 API）",
+			"AI内容助手: 发布到公众号（官方 API）",
 			() => void this.pipeline.publishToWechatOfficial(),
 		);
 		reg(
 			"gzh-image-cards",
-			"GZH Pipeline: Moka 图文卡片（设置中的默认平台）",
+			"AI内容助手: Moka 图文卡片（设置中的默认平台）",
 			() => void this.pipeline.generateImageCards(),
 		);
 		reg(
 			"gzh-image-cards-xhs",
-			"GZH Pipeline: Moka 图文卡片（小红书 · 使用该侧模板配色）",
+			"AI内容助手: Moka 图文卡片（小红书 · 使用该侧模板配色）",
 			() => void this.pipeline.generateImageCards("xhs"),
 		);
 		reg(
 			"gzh-image-cards-wechat",
-			"GZH Pipeline: Moka 图文卡片（公众号 · 使用该侧模板配色）",
+			"AI内容助手: Moka 图文卡片（公众号 · 使用该侧模板配色）",
 			() => void this.pipeline.generateImageCards("wechat"),
 		);
 		reg(
 			"gzh-video-xhs",
-			"GZH Pipeline: 视频（小红书图文转 30 秒短视频）",
+			"AI内容助手: 视频（小红书图文转 30 秒短视频）",
 			() => void this.pipeline.generateVideoFromXhsCards(),
 		);
 	}

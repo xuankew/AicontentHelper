@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function MedicalCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#f0f4f8", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: "linear-gradient(90deg, #e74c3c, #c0392b)" }} />
@@ -12,7 +14,7 @@ export function MedicalCover({ s, a, total, ed }) {
           </div>
           <div>
             <div style={{ fontSize: 9, color: "#e74c3c", letterSpacing: "2px", fontWeight: 600, marginBottom: 4 }}>HEALTH GUIDE</div>
-            <div style={{ fontSize: 10, color: "#888" }}>{s.category}</div>
+            {plat != null ? <div style={{ fontSize: 10, color: "#888" }}>{plat}</div> : null}
           </div>
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>

@@ -1,15 +1,21 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function FashionCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#0d0d0d", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "48px 40px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
-          <div style={{ width: 60, height: 60, background: a, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.9)", letterSpacing: "2px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</div>
-          </div>
-          <div style={{ width: 2, height: 60, background: "rgba(255,255,255,0.4)" }} />
+          {plat != null ? (
+            <div style={{ width: 60, height: 60, background: a, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.9)", letterSpacing: "2px", fontWeight: 600 }}>{plat}</div>
+            </div>
+          ) : null}
+          {plat != null ? (
+            <div style={{ width: 2, height: 60, background: "rgba(255,255,255,0.4)" }} />
+          ) : null}
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "3px" }}>FASHION</div>
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>

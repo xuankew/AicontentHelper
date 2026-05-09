@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function CleanCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#fff", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "48px 40px", position: "relative" }}>
@@ -26,7 +28,9 @@ export function CleanCover({ s, a, total, ed, emojiEditor }) {
               align="center"
             />
           </div>
-          <span style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</span>
+          {plat != null ? (
+            <span style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600 }}>{plat}</span>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1 }}>
           <EditableText 

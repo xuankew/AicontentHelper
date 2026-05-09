@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function KoreanCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#fff", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 柔和渐变背景 */}
@@ -35,7 +37,9 @@ export function KoreanCover({ s, a, total, ed, emojiEditor }) {
             />
           </div>
           <div>
-            <div style={{ fontSize: 10, color: a, letterSpacing: "2px", fontWeight: 700, marginBottom: 2 }}>{s.category?.toUpperCase?.() || ""}</div>
+            {plat != null ? (
+              <div style={{ fontSize: 10, color: a, letterSpacing: "2px", fontWeight: 700, marginBottom: 2 }}>{plat}</div>
+            ) : null}
             <div style={{ display: "flex", gap: 4 }}>
               {[...Array(3)].map((_, i) => <div key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: `${a}40` }} />)}
             </div>

@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function TravelCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#f5f0e8", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "absolute", top: 20, right: 20, width: 100, height: 100, border: `2px dashed ${a}40`, borderRadius: "50%", transform: "rotate(15deg)" }} />
@@ -9,7 +11,9 @@ export function TravelCover({ s, a, total, ed }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "36px 32px", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <div style={{ width: 24, height: 24, background: a, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12 }}>★</div>
-          <span style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</span>
+          {plat != null ? (
+            <span style={{ fontSize: 10, color: a, letterSpacing: "3px", fontWeight: 600 }}>{plat}</span>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <div style={{ position: "relative" }}>

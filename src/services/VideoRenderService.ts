@@ -26,6 +26,8 @@ export interface VideoRenderResult {
 }
 
 interface VideoConfigPlatformCopy {
+	/** Moka / 导图导出的首帧 PNG 绝对路径，供 FFmpeg 铺满 9:16；与各平台 Pillow 备选二选一（插件侧应始终传入） */
+	open_frame_png?: string;
 	cover_title: string;
 	opening_text: string;
 	ending_text: string;
@@ -80,6 +82,10 @@ export class VideoRenderService {
 		if (middleAbs.length === 0) {
 			throw new Error("缺少视频中段图片（cardImageFiles 为空）。请先完成 Moka 视频导图。");
 		}
+		console.info(RENDER_LOG, "轮播将使用以下本地文件", {
+			dir: nodePath.dirname(middleAbs[0]!),
+			count: middleAbs.length,
+		});
 
 		const coverAbs = input.coverPngVault
 			? (() => {
@@ -92,6 +98,8 @@ export class VideoRenderService {
 				})()
 			: "";
 
+		const coverFs = coverAbs || undefined;
+
 		const job: JobJson = {
 			outputDir: outputAbs,
 			cardImageFiles: middleAbs,
@@ -100,19 +108,22 @@ export class VideoRenderService {
 			videoConfig: {
 				voiceover: input.voiceover,
 				accountInfo: input.accountInfo,
-				openFramePngPath: coverAbs || undefined,
+				openFramePngPath: coverFs,
 				platforms: {
 					xiaohongshu: {
+						open_frame_png: coverFs,
 						cover_title: input.platformCopies.xiaohongshu.title,
 						opening_text: input.platformCopies.xiaohongshu.openingText,
 						ending_text: input.platformCopies.xiaohongshu.endingText,
 					},
 					douyin: {
+						open_frame_png: coverFs,
 						cover_title: input.platformCopies.douyin.title,
 						opening_text: input.platformCopies.douyin.openingText,
 						ending_text: input.platformCopies.douyin.endingText,
 					},
 					shipinhao: {
+						open_frame_png: coverFs,
 						cover_title: input.platformCopies.shipinhao.title,
 						opening_text: input.platformCopies.shipinhao.openingText,
 						ending_text: input.platformCopies.shipinhao.endingText,

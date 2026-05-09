@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function FinanceCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#1a1a2e", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ background: "#ffd700", padding: "14px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -12,7 +14,9 @@ export function FinanceCover({ s, a, total, ed }) {
         <div style={{ position: "absolute", top: 0, right: 0, width: "40%", height: "100%", background: "linear-gradient(180deg, #ffd70015 0%, transparent 100%)" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <div style={{ width: 50, height: 3, background: "#ffd700" }} />
-          <span style={{ fontSize: 9, color: "#ffd700", letterSpacing: "3px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</span>
+          {plat != null ? (
+            <span style={{ fontSize: 9, color: "#ffd700", letterSpacing: "3px", fontWeight: 600 }}>{plat}</span>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <EditableText v={s.title} on={ed?.title} block dk style={{ fontSize: 32, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 16, ...ed?.titleStyle }} draggable={!!ed?.updateTitleStyle} onStyleChange={ed?.updateTitleStyle} />

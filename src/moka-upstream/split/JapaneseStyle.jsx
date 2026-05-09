@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function JapaneseCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#f8f5f0", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "40px 32px", position: "relative" }}>
@@ -17,7 +19,9 @@ export function JapaneseCover({ s, a, total, ed, emojiEditor }) {
               onStyleChange={emojiEditor?.onStyleChange}
             />
           </div>
-          <div style={{ fontSize: 9, color: "#333", letterSpacing: "4px" }}>{s.category?.toUpperCase?.() || ""}</div>
+          {plat != null ? (
+            <div style={{ fontSize: 9, color: "#333", letterSpacing: "4px" }}>{plat}</div>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1 }}>
           <div style={{ position: "absolute", left: -20, top: 0, bottom: 0, width: 3, background: a }} />

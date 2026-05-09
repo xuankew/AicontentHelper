@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function FoodCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#fef9f3", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 8, background: `repeating-linear-gradient(90deg, ${a}, ${a} 20px, transparent 20px, transparent 40px)` }} />
@@ -13,7 +15,9 @@ export function FoodCover({ s, a, total, ed }) {
               <div style={{ width: 40, height: 2, background: a }} />
               <span style={{ fontSize: 9, color: a, letterSpacing: "3px", fontWeight: 600 }}>CUISINE</span>
             </div>
-            <div style={{ fontSize: 10, color: "#999", letterSpacing: "1px" }}>{s.category}</div>
+            {plat != null ? (
+              <div style={{ fontSize: 10, color: "#999", letterSpacing: "1px" }}>{plat}</div>
+            ) : null}
           </div>
           <div style={{ fontSize: 32 }}>🍴</div>
         </div>

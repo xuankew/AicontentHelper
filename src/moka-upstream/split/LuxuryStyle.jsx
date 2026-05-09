@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function LuxuryCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, "LUXURY");
   return (
     <div style={{ background: "#faf9f7", width: "100%", aspectRatio: "3/4", fontFamily: "'Playfair Display', 'Georgia', serif", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 金色边框装饰 */}
@@ -24,9 +26,11 @@ export function LuxuryCover({ s, a, total, ed }) {
         </div>
         
         {/* 分类 */}
-        <div style={{ fontSize: 10, color: "#999", letterSpacing: "6px", marginBottom: 32, fontWeight: 300, textTransform: "uppercase" }}>
-          {s.category?.toUpperCase?.() || "LUXURY"}
-        </div>
+        {plat != null ? (
+          <div style={{ fontSize: 10, color: "#999", letterSpacing: "6px", marginBottom: 32, fontWeight: 300, textTransform: "uppercase" }}>
+            {plat}
+          </div>
+        ) : null}
         
         {/* 装饰线 */}
         <div style={{ width: 1, height: 60, background: "linear-gradient(180deg, transparent, #d4af37, transparent)", marginBottom: 32 }} />

@@ -59,7 +59,7 @@ function installOnMarkdownView(
 		{
 			step: "outline",
 			icon: "list",
-			title: "列提纲 · 从正文生成提纲（公众号写作流水线）",
+			title: "列提纲 · 从正文生成提纲（AI内容助手）",
 		},
 		{
 			step: "draft",

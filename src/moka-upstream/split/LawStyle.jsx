@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function LawCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#f8f6f3", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", height: "100%" }}>
@@ -18,11 +20,13 @@ export function LawCover({ s, a, total, ed }) {
             </div>
             {s.subtitle && <EditableText v={s.subtitle} on={ed?.subtitle} block style={{ fontSize: 14, color: "#5a4a3a", lineHeight: 1.7, fontStyle: "italic", paddingLeft: 16, ...ed?.subtitleStyle }} draggable={!!ed?.updateSubtitleStyle} onStyleChange={ed?.updateSubtitleStyle} />}
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ flex: 1, height: 1, background: "#d4a57450" }} />
-            <div style={{ fontSize: 9, color: "#8b4513", letterSpacing: "2px" }}>{s.category?.toUpperCase?.() || ""}</div>
-            <div style={{ flex: 1, height: 1, background: "#d4a57450" }} />
-          </div>
+          {plat != null ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ flex: 1, height: 1, background: "#d4a57450" }} />
+              <div style={{ fontSize: 9, color: "#8b4513", letterSpacing: "2px" }}>{plat}</div>
+              <div style={{ flex: 1, height: 1, background: "#d4a57450" }} />
+            </div>
+          ) : null}
         </div>
       </div>
       <div style={{ display: "flex", gap: 6, padding: "0 28px 24px", marginLeft: 4 }}>

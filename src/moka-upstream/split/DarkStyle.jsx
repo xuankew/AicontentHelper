@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function DarkCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "#0a0a0a", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 30% 30%, ${a}20 0%, transparent 50%), radial-gradient(circle at 70% 70%, ${a}10 0%, transparent 40%)` }} />
@@ -17,7 +19,9 @@ export function DarkCover({ s, a, total, ed, emojiEditor }) {
               onStyleChange={emojiEditor?.onStyleChange}
             />
           </div>
-          <span style={{ fontSize: 10, color: a, letterSpacing: "4px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</span>
+          {plat != null ? (
+            <span style={{ fontSize: 10, color: a, letterSpacing: "4px", fontWeight: 600 }}>{plat}</span>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <EditableText v={s.title} on={ed?.title} block dk style={{ fontSize: 34, fontWeight: 700, color: "#fff", lineHeight: 1.15, marginBottom: 16, textShadow: `0 0 30px ${a}40`, ...ed?.titleStyle }} draggable={!!ed?.updateTitleStyle} onStyleChange={ed?.updateTitleStyle} />

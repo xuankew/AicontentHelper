@@ -8,7 +8,15 @@ import type {
 } from "../types";
 import { STAGE_FILES } from "../templates/fileTemplates";
 import { isoNow } from "../templates/metaTemplate";
-import { joinVaultPath, normalizeVaultPath } from "../utils/path";
+import {
+	fileNameFromPath,
+	joinVaultPath,
+	normalizeVaultPath,
+} from "../utils/path";
+import {
+	coerceCardPalette,
+	coerceCardTemplate,
+} from "../settings/mokaCardPresets";
 import { splitReviewOutput } from "../utils/review";
 import {
 	ArticleProjectService,
@@ -310,14 +318,29 @@ export class PipelineService {
 			}
 			const deckRaw = await this.files.readTextFile(deckPath);
 			const deck = JSON.parse(deckRaw) as NativeMokaDeck;
+			const deckForVideo: NativeMokaDeck = {
+				...deck,
+				platform: deck.platform ?? "xhs",
+				template: coerceCardTemplate(
+					settings.mokaCardTemplateXhs,
+					deck.template,
+				),
+				palette: coerceCardPalette(settings.mokaCardPaletteXhs, deck.palette),
+			};
 			const mokaRender = new MokaCardRenderService(this.files);
-			const allCardPaths = await mokaRender.exportDeckToVault({
+			const exportedPaths = await mokaRender.exportDeckToVault({
 				projectRoot,
-				deck,
+				deck: deckForVideo,
 				exportPixelRatio: settings.mokaCardExportPixelRatio,
-				cardWxH: settings.mokaCardSizeWxH,
+				cardWxH: VIDEO_LAYOUT.mokaExportWxH,
 				outputRootDir: VIDEO_LAYOUT.mokaFramesDir,
 			});
+			const allCardPaths = [...exportedPaths].sort((a, b) =>
+				fileNameFromPath(a).localeCompare(fileNameFromPath(b), undefined, {
+					numeric: true,
+					sensitivity: "base",
+				}),
+			);
 			const coverPath =
 				allCardPaths.find((p) => /(?:^|\/)\d+-cover\.png$/i.test(p)) ||
 				allCardPaths[0];
@@ -759,18 +782,18 @@ export class PipelineService {
 
 	async refreshContextForActiveFile(): Promise<{ text: string }> {
 		const af = this.app.workspace.getActiveFile();
-		if (!af) return { text: "GZH: 未打开文件" };
+		if (!af) return { text: "AI助手: 未打开文件" };
 
 		const projectRoot = await this.state.resolvePublishedProjectRoot(af.path);
 		if (!projectRoot) {
-			return { text: "GZH: 原始卡片模式（可列提纲）" };
+			return { text: "AI助手: 原始卡片（可列提纲）" };
 		}
 
 		const meta = await this.state.readMeta(projectRoot);
 		if (!meta) {
-			return { text: "GZH: 项目 meta 无效" };
+			return { text: "AI助手: 项目无效" };
 		}
-		return { text: `GZH: ${meta.status}` };
+		return { text: `AI助手: ${meta.status}` };
 	}
 
 	private async runLlmStage(params: {

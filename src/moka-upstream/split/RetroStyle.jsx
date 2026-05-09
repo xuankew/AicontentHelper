@@ -17,13 +17,13 @@ export function RetroCover({ s, a, total, ed, emojiEditor }) {
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <div style={{ marginBottom: 16 }}>
-            <EditableEmoji
-              emoji={s.emoji || "✨"}
-              onEmojiChange={emojiEditor?.onEmojiChange}
-              style={emojiEditor?.style || { fontSize: '56px' }}
-              onStyleChange={emojiEditor?.onStyleChange}
-            />
-          </div>
+              <EditableEmoji
+                emoji={s.emoji || "✨"}
+                onEmojiChange={emojiEditor?.onEmojiChange}
+                style={emojiEditor?.style || { fontSize: '56px' }}
+                onStyleChange={emojiEditor?.onStyleChange}
+              />
+            </div>
             <EditableText v={s.title} on={ed?.title} block style={{ fontSize: 28, fontWeight: 900, color: "#1a1510", lineHeight: 1.25, fontFamily: "Georgia, serif", marginBottom: 16, ...ed?.titleStyle }} draggable={!!ed?.updateTitleStyle} onStyleChange={ed?.updateTitleStyle} />
             {s.subtitle && <EditableText v={s.subtitle} on={ed?.subtitle} block style={{ fontSize: 14, color: "#666", lineHeight: 1.7, fontStyle: "italic", ...ed?.subtitleStyle }} draggable={!!ed?.updateSubtitleStyle} onStyleChange={ed?.updateSubtitleStyle} />}
           </div>

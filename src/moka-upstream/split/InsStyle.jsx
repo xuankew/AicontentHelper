@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function InsCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, "INS");
   return (
     <div style={{ background: "#fafafa", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 背景渐变装饰 */}
@@ -45,7 +47,9 @@ export function InsCover({ s, a, total, ed, emojiEditor }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 2 }}>{s.category || "INS"}</div>
+            {plat != null ? (
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 2 }}>{plat}</div>
+            ) : null}
             <div style={{ fontSize: 10, color: "#999" }}>Stories • {new Date().toLocaleDateString()}</div>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>

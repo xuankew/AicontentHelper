@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function GradientCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, null);
   return (
     <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.2)" }} />
@@ -16,7 +18,9 @@ export function GradientCover({ s, a, total, ed, emojiEditor }) {
               onStyleChange={emojiEditor?.onStyleChange}
             />
           </div>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", letterSpacing: "3px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || ""}</span>
+          {plat != null ? (
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", letterSpacing: "3px", fontWeight: 600 }}>{plat}</span>
+          ) : null}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <EditableText v={s.title} on={ed?.title} block style={{ fontSize: 34, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 16, textShadow: "0 2px 10px rgba(0,0,0,0.3)", ...ed?.titleStyle }} draggable={!!ed?.updateTitleStyle} onStyleChange={ed?.updateTitleStyle} />

@@ -1,9 +1,33 @@
-import type { MokaDeckSlide, NativeMokaDeck } from "../../types";
+import type {
+	MokaCardPlatform,
+	MokaDeckSlide,
+	NativeMokaDeck,
+} from "../../types";
 
-export function upstreamCategoryLabel(
-	platform: NativeMokaDeck["platform"],
-): string {
-	return platform === "xhs" ? "XHS" : "WECHAT";
+/**
+ * deck.json 里 platform 可能是 xhs / XHS / xiaohongshu / 小红书 等，统一后再判断角标与装饰。
+ */
+export function normalizeMokaDeckPlatform(raw: unknown): MokaCardPlatform {
+	const rawTrim = String(raw ?? "").trim();
+	if (rawTrim === "小红书" || rawTrim === "小紅書") return "xhs";
+	const s = rawTrim.toLowerCase().replace(/\s+/g, "");
+	if (
+		s === "xhs" ||
+		s === "xiaohongshu" ||
+		s === "rednote" ||
+		s === "redbook" ||
+		s === "littleredbook" ||
+		s === "little_red_book"
+	) {
+		return "xhs";
+	}
+	return "wechat";
+}
+
+export function upstreamCategoryLabel(platform: unknown): string {
+	/** 小红书封面不显示「XHS」平台角标（空串由 upstream Cover 解释为隐藏） */
+	if (normalizeMokaDeckPlatform(platform) === "xhs") return "";
+	return "WECHAT";
 }
 
 /**
@@ -13,11 +37,9 @@ export function buildUpstreamSlidePayload(
 	deck: NativeMokaDeck,
 	slide: MokaDeckSlide,
 ): Record<string, unknown> {
-	const cat = upstreamCategoryLabel(deck.platform);
-
 	if (slide.kind === "cover") {
 		return {
-			category: cat,
+			category: upstreamCategoryLabel(deck.platform),
 			emoji: slide.emoji,
 			title: slide.title,
 			subtitle: slide.subtitle,

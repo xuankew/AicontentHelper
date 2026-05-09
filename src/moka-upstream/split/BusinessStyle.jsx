@@ -1,7 +1,9 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function BusinessCover({ s, a, total, ed }) {
+  const plat = coverPlatformBadgeText(s, "BUSINESS");
   return (
     <div style={{ background: "#fff", width: "100%", aspectRatio: "3/4", fontFamily: "'Georgia', 'Times New Roman', serif", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 报纸风格头部 */}
@@ -18,7 +20,9 @@ export function BusinessCover({ s, a, total, ed }) {
       {/* 分类标签 */}
       <div style={{ padding: "12px 24px", borderBottom: "1px solid #eee", display: "flex", gap: 20 }}>
         <span style={{ fontSize: 10, color: "#999", letterSpacing: "2px" }}>MARKETS</span>
-        <span style={{ fontSize: 10, color: a, fontWeight: 700, letterSpacing: "2px", borderBottom: `2px solid ${a}` }}>{s.category?.toUpperCase?.() || "BUSINESS"}</span>
+        {plat != null ? (
+          <span style={{ fontSize: 10, color: a, fontWeight: 700, letterSpacing: "2px", borderBottom: `2px solid ${a}` }}>{plat}</span>
+        ) : null}
         <span style={{ fontSize: 10, color: "#999", letterSpacing: "2px" }}>TECH</span>
         <span style={{ fontSize: 10, color: "#999", letterSpacing: "2px" }}>OPINION</span>
       </div>

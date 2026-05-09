@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function ForestCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, "FOREST");
   return (
     <div style={{ background: "#f0f9f4", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 自然纹理背景 */}
@@ -34,9 +36,11 @@ export function ForestCover({ s, a, total, ed, emojiEditor }) {
             <span style={{ fontSize: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}>🌿</span>
             <span style={{ fontSize: 24, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))", marginLeft: -8 }}>🌱</span>
           </div>
-          <div style={{ padding: "6px 16px", background: `${a}15`, borderRadius: 12 }}>
-            <span style={{ fontSize: 9, color: a, letterSpacing: "3px", fontWeight: 600 }}>{s.category?.toUpperCase?.() || "FOREST"}</span>
-          </div>
+          {plat != null ? (
+            <div style={{ padding: "6px 16px", background: `${a}15`, borderRadius: 12 }}>
+              <span style={{ fontSize: 9, color: a, letterSpacing: "3px", fontWeight: 600 }}>{plat}</span>
+            </div>
+          ) : null}
         </div>
         
         {/* 大号装饰 emoji */}

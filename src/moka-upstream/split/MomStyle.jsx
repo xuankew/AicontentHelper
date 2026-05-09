@@ -1,8 +1,10 @@
 import { EditableText, EditableTag } from "../common/EditableText";
 import { EditableEmoji } from "../common/EditableEmoji";
 import { FONT_FAMILY } from "../constants";
+import { coverPlatformBadgeText } from "../coverPlatformBadgeText";
 
 export function MomCover({ s, a, total, ed, emojiEditor }) {
+  const plat = coverPlatformBadgeText(s, "MOM");
   return (
     <div style={{ background: "#fff5f7", width: "100%", aspectRatio: "3/4", fontFamily: FONT_FAMILY, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 可爱装饰形状 */}
@@ -30,14 +32,16 @@ export function MomCover({ s, a, total, ed, emojiEditor }) {
           }}>
             <span style={{ fontSize: 28 }}>🤱</span>
           </div>
-          <div style={{ 
-            padding: "8px 16px", 
-            background: "#fff",
-            borderRadius: 20,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)"
-          }}>
-            <span style={{ fontSize: 11, color: a, fontWeight: 700, letterSpacing: "1px" }}>{s.category || "MOM"}</span>
-          </div>
+          {plat != null ? (
+            <div style={{ 
+              padding: "8px 16px", 
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)"
+            }}>
+              <span style={{ fontSize: 11, color: a, fontWeight: 700, letterSpacing: "1px" }}>{plat}</span>
+            </div>
+          ) : null}
         </div>
         
         {/* 主要内容区 */}

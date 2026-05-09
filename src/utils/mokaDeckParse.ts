@@ -70,7 +70,25 @@ function parseSlide(row: Record<string, unknown>, idx: number): MokaDeckSlide | 
 }
 
 export function coercePlatform(v: unknown, fb: MokaCardPlatform): MokaCardPlatform {
-	return v === "wechat" || v === "xhs" ? v : fb;
+	if (v === "wechat" || v === "xhs") return v;
+	if (typeof v === "string") {
+		const t = v.trim();
+		const lower = t.toLowerCase();
+		const compact = lower.replace(/\s+/g, "");
+		if (lower === "wechat") return "wechat";
+		if (
+			lower === "xhs" ||
+			lower === "xiaohongshu" ||
+			t === "小红书" ||
+			t === "小紅書" ||
+			compact === "rednote" ||
+			compact === "redbook" ||
+			compact === "littleredbook"
+		) {
+			return "xhs";
+		}
+	}
+	return fb;
 }
 
 export function parseNativeMokaDeckFromLlm(params: {

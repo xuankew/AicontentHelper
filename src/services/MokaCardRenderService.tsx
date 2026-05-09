@@ -4,6 +4,7 @@ import { toPng } from "html-to-image";
 import type { MokaDeckSlide, NativeMokaDeck } from "../types";
 import type { FileService } from "./FileService";
 import { normalizeVaultPath, joinVaultPath } from "../utils/path";
+import { coercePlatform } from "../utils/mokaDeckParse";
 import { MOKA_LAYOUT } from "../constants/publishPaths";
 import {
 	applySlideContent,
@@ -94,15 +95,27 @@ function mountUpstreamSlide(
 	frame.style.padding = "0";
 	frame.style.background = "#ffffff";
 
+	/** 设计视口 420×560（3:4）与任意导出 WxH 组合时，必须用同一比例缩放，否则会横向或纵向拉伸。 */
 	const scaleX = dims.w / MOKA_UPSTREAM_DESIGN_W;
 	const scaleY = dims.h / MOKA_UPSTREAM_DESIGN_H;
+	const uniformScale = Math.min(scaleX, scaleY);
+
+	const wrap = doc.createElement("div");
+	wrap.style.boxSizing = "border-box";
+	wrap.style.width = "100%";
+	wrap.style.height = "100%";
+	wrap.style.display = "flex";
+	wrap.style.alignItems = "center";
+	wrap.style.justifyContent = "center";
+	wrap.style.overflow = "hidden";
 
 	const scaler = doc.createElement("div");
 	scaler.style.boxSizing = "border-box";
 	scaler.style.width = `${MOKA_UPSTREAM_DESIGN_W}px`;
 	scaler.style.height = `${MOKA_UPSTREAM_DESIGN_H}px`;
-	scaler.style.transform = `scale(${scaleX}, ${scaleY})`;
-	scaler.style.transformOrigin = "top left";
+	scaler.style.flexShrink = "0";
+	scaler.style.transform = `scale(${uniformScale})`;
+	scaler.style.transformOrigin = "center center";
 
 	const root = createRoot(scaler);
 	root.render(
@@ -114,7 +127,8 @@ function mountUpstreamSlide(
 			/>
 		</StrictMode>,
 	);
-	frame.appendChild(scaler);
+	wrap.appendChild(scaler);
+	frame.appendChild(wrap);
 	return root;
 }
 
@@ -128,7 +142,10 @@ export class MokaCardRenderService {
 		cardWxH?: string;
 		outputRootDir?: string;
 	}): Promise<string[]> {
-		const { deck } = params;
+		const deck: NativeMokaDeck = {
+			...params.deck,
+			platform: coercePlatform(params.deck.platform, "wechat"),
+		};
 		const dims = parseMokaCardDimensions(params.cardWxH ?? "");
 		const pr = Math.max(1, Math.min(4, params.exportPixelRatio || 2));
 		const pngPathsOut: string[] = [];

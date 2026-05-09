@@ -2,6 +2,11 @@ import { EditableText, EditableTag } from "../common/EditableText";
 import { FONT_FAMILY } from "../constants";
 
 export function TechCover({ s, a, total, ed }) {
+  const termCat =
+    typeof s.category === "string" && s.category.trim().length > 0
+      ? s.category.trim().toLowerCase()
+      : "core";
+
   return (
     <div style={{ background: "#0a0a0f", width: "100%", aspectRatio: "3/4", fontFamily: "'JetBrains Mono', 'Fira Code', monospace", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* 背景网格 */}
@@ -20,13 +25,13 @@ export function TechCover({ s, a, total, ed }) {
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f56" }} />
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ffbd2e" }} />
           <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#27ca40" }} />
-          <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "#666" }}>root@system:~/{s.category}</div>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 11, color: "#666" }}>root@system:~/{termCat}</div>
         </div>
         
         {/* 终端内容 */}
         <div style={{ padding: "24px", height: "calc(100% - 32px)", display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 10, color: "#00ff88", marginBottom: 16 }}>
-            <span style={{ color: "#666" }}>$</span> ./init_system.sh --category={s.category} --mode=production
+            <span style={{ color: "#666" }}>$</span> ./init_system.sh --category={termCat} --mode=production
           </div>
           
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>

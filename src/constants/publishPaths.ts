@@ -27,6 +27,8 @@ export const MOKA_LAYOUT = {
 /** 「视频」按钮：口播稿、渲染配置与最终 mp4 等产物 */
 export const VIDEO_LAYOUT = {
 	rootDir: "assets/video",
+	/** Moka 重导至 `mokaFramesDir` 时使用的竖屏视频画布（独立于小红书预览尺寸设置） */
+	mokaExportWxH: "1080x1920",
 	mokaFramesDir: "assets/video/moka-frames",
 	voiceover: "assets/video/voiceover.md",
 	platformPostsMd: "assets/video/platform-posts.md",
